@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🚗 Попутчики | VK</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Шапка -->
+    <header class="header">
+        <div class="header-top">
+            <div class="app-title">
+                <i class="fas fa-car"></i>
+                <h1>Попутчики</h1>
+            </div>
+            <div class="user-avatar" id="userAvatar" onclick="App.toggleAdminMode()" title="Суперпользователь">
+                <i class="fas fa-user-shield" id="adminIcon"></i>
+            </div>
+        </div>
+        
+        <div class="role-switch">
+            <div class="role-btn active" onclick="App.switchRole('driver')">
+                <i class="fas fa-car"></i>
+                <span>Водитель</span>
+            </div>
+            <div class="role-btn" onclick="App.switchRole('passenger')">
+                <i class="fas fa-user"></i>
+                <span>Пассажир</span>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Вкладки регионов -->
+    <div class="tabs-container">
+        <div class="region-tabs" id="regionTabs">
+            <!-- Вкладки будут добавляться динамически -->
+        </div>
+        <div class="add-buttons">
+            <button class="add-btn add-region-btn" onclick="App.openCreateRegionModal()">
+                <i class="fas fa-plus"></i>
+                <span>Новый регион</span>
+            </button>
+            <button class="add-btn add-direction-btn" onclick="App.openCreateDirectionInCurrentRegion()">
+                <i class="fas fa-route"></i>
+                <span>Новое направление</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Основной контент -->
+    <main class="content" id="appContent">
+        <div class="empty-state">
+            <i class="fas fa-map-marked-alt"></i>
+            <h3>Выберите регион</h3>
+            <p>Нажмите на вкладку региона выше</p>
+        </div>
+    </main>
+    
+    <!-- Плавающая кнопка -->
+    <button class="fab" onclick="App.openCreateRideModal()" title="Создать поездку" id="fabButton">
+        <i class="fas fa-car"></i>
+    </button>
+    
+    <!-- Модальные окна -->
+    <div id="modals">
+        <!-- Модальные окна будут добавляться динамически -->
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
