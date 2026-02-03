@@ -2,93 +2,277 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🚗 Попутчики</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Попутчики - VK</title>
     
-    <!-- VK SDK МОЖЕТ БЫТЬ ПРОБЛЕМОЙ, ДАВАЙТЕ УБЕРЕМ ЕГО И ПРОВЕРИМ -->
-    <!-- <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script> -->
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Наши стили -->
-    <link rel="stylesheet" href="styles.css">
+    <!-- Только VK Bridge - НИКАКИХ других библиотек -->
+    <script src="https://unpkg.com/@vkontakte/vk-bridge@6.0.10/dist/browser.min.js"></script>
     
     <style>
-        /* Простейшие стили для начала */
+        /* АБСОЛЮТНО МИНИМАЛЬНЫЕ СТИЛИ */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             margin: 0;
             padding: 0;
-            background: #f5f7fa;
-            color: #2c3e50;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #07f 0%, #4a6fff 100%);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             color: white;
-            padding: 15px;
-        }
-        
-        .app-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 20px;
-            font-weight: bold;
-        }
-        
-        .content {
-            padding: 20px;
             text-align: center;
         }
         
-        .loading {
-            margin-top: 50px;
-            font-size: 18px;
+        .container {
+            padding: 40px 20px;
+            max-width: 800px;
+            margin: 0 auto;
         }
         
-        .error {
-            color: #e74c3c;
-            background: #ffeaea;
+        h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .status {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+        
+        .btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .log {
+            background: rgba(0,0,0,0.2);
             padding: 15px;
             border-radius: 10px;
-            margin: 20px;
+            margin-top: 30px;
+            text-align: left;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <!-- Простая шапка -->
-    <div class="header">
-        <div class="app-title">
-            <i class="fas fa-car"></i>
-            <span>Попутчики</span>
+    <div class="container">
+        <h1>🚗 Попутчики VK</h1>
+        <p>Самое простое приложение для поиска попутчиков</p>
+        
+        <div class="status" id="status">
+            <div class="loading"></div>
+            <div>Инициализация...</div>
         </div>
-    </div>
-    
-    <!-- Основной контент -->
-    <div class="content" id="appContent">
-        <div class="loading">
-            <i class="fas fa-spinner fa-spin"></i>
-            <div>Загрузка приложения...</div>
+        
+        <div>
+            <button class="btn" onclick="App.showMessage('Привет от Попутчиков!')">
+                👋 Поздороваться
+            </button>
+            <button class="btn" onclick="App.getUserInfo()">
+                👤 Получить профиль
+            </button>
+            <button class="btn" onclick="App.testConnection()">
+                🔌 Проверить связь
+            </button>
+        </div>
+        
+        <div class="log" id="log">
+            <div>Лог событий:</div>
         </div>
     </div>
 
-    <!-- Наш JavaScript -->
-    <script src="app.js"></script>
-    
     <script>
-        // Проверка загрузки
-        console.log('HTML загружен');
+        // ВСЁ В ОДНОМ ФАЙЛЕ - НИКАКИХ ВНЕШНИХ СКРИПТОВ
+        console.log('=== ПРИЛОЖЕНИЕ ЗАГРУЖАЕТСЯ ===');
         
-        // Проверяем, в VK ли мы
-        const isVK = window.location.href.includes('vk.com') || 
-                     window.location.href.includes('vk-apps.com') ||
-                     (typeof VK !== 'undefined');
+        const App = {
+            log: [],
+            
+            // Логирование
+            addLog(message, type = 'info') {
+                const time = new Date().toLocaleTimeString();
+                const logEntry = `[${time}] <span class="${type}">${message}</span>`;
+                this.log.push(logEntry);
+                
+                const logDiv = document.getElementById('log');
+                if (logDiv) {
+                    logDiv.innerHTML = 'Лог событий:<br>' + this.log.join('<br>');
+                    logDiv.scrollTop = logDiv.scrollHeight;
+                }
+                
+                console.log(`[${type}] ${message}`);
+            },
+            
+            // Обновление статуса
+            updateStatus(text, isError = false) {
+                const statusDiv = document.getElementById('status');
+                if (statusDiv) {
+                    statusDiv.innerHTML = isError 
+                        ? `<div style="color:#f87171">❌ ${text}</div>`
+                        : `<div>✅ ${text}</div>`;
+                }
+            },
+            
+            // Инициализация
+            async init() {
+                this.addLog('Начало инициализации...');
+                
+                try {
+                    // Шаг 1: Проверяем VK Bridge
+                    this.addLog('Проверка VK Bridge...');
+                    
+                    if (typeof vkBridge === 'undefined') {
+                        throw new Error('VK Bridge не загружен!');
+                    }
+                    
+                    this.addLog('VK Bridge обнаружен ✅');
+                    
+                    // Шаг 2: Инициализируем VK Bridge
+                    this.addLog('Инициализация VK Bridge...');
+                    
+                    const result = await vkBridge.send('VKWebAppInit', {});
+                    this.addLog('VK Bridge инициализирован ✅');
+                    this.addLog(`Результат: ${JSON.stringify(result)}`);
+                    
+                    // Шаг 3: Получаем информацию о приложении
+                    this.addLog('Получение информации о приложении...');
+                    
+                    const appInfo = await vkBridge.send('VKWebAppGetLaunchParams', {});
+                    this.addLog(`Параметры запуска: ${JSON.stringify(appInfo)}`);
+                    
+                    this.updateStatus('Приложение готово к работе!');
+                    this.addLog('Инициализация завершена успешно! ✅', 'success');
+                    
+                    // Показываем кнопки
+                    document.querySelectorAll('.btn').forEach(btn => {
+                        btn.style.display = 'inline-block';
+                    });
+                    
+                } catch (error) {
+                    this.addLog(`Ошибка: ${error.message}`, 'error');
+                    this.updateStatus(`Ошибка: ${error.message}`, true);
+                    
+                    // Если не в VK - показываем тестовый режим
+                    if (error.message.includes('VK Bridge')) {
+                        this.addLog('Работаем в тестовом режиме (не в VK)', 'warning');
+                        this.updateStatus('Тестовый режим (откройте в VK)');
+                        
+                        // Включаем кнопки для тестирования
+                        document.querySelectorAll('.btn').forEach(btn => {
+                            btn.style.display = 'inline-block';
+                        });
+                    }
+                }
+            },
+            
+            // Методы приложения
+            async showMessage(text) {
+                try {
+                    if (typeof vkBridge !== 'undefined') {
+                        await vkBridge.send('VKWebAppShowMessage', { message: text });
+                        this.addLog(`Сообщение показано: "${text}"`, 'success');
+                    } else {
+                        alert(text);
+                        this.addLog(`Alert: "${text}"`, 'warning');
+                    }
+                } catch (error) {
+                    this.addLog(`Ошибка показа сообщения: ${error.message}`, 'error');
+                }
+            },
+            
+            async getUserInfo() {
+                try {
+                    if (typeof vkBridge !== 'undefined') {
+                        const user = await vkBridge.send('VKWebAppGetUserInfo', {});
+                        this.addLog(`Пользователь: ${user.first_name} ${user.last_name}`, 'success');
+                        this.showMessage(`Привет, ${user.first_name}!`);
+                    } else {
+                        this.addLog('Тестовый пользователь: Иван Иванов', 'warning');
+                        this.showMessage('Привет, Иван! (тестовый режим)');
+                    }
+                } catch (error) {
+                    this.addLog(`Ошибка получения пользователя: ${error.message}`, 'error');
+                }
+            },
+            
+            async testConnection() {
+                try {
+                    this.addLog('Тестирование соединения...');
+                    
+                    if (typeof vkBridge !== 'undefined') {
+                        // Тестируем несколько методов
+                        const methods = ['VKWebAppGetClientVersion', 'VKWebAppGetLaunchParams'];
+                        
+                        for (const method of methods) {
+                            try {
+                                const result = await vkBridge.send(method, {});
+                                this.addLog(`${method}: OK`, 'success');
+                            } catch (error) {
+                                this.addLog(`${method}: ${error.message}`, 'error');
+                            }
+                        }
+                        
+                        this.showMessage('Соединение с VK работает!');
+                    } else {
+                        this.addLog('Не в VK - соединение не тестируется', 'warning');
+                        this.showMessage('Откройте приложение в VK для тестирования');
+                    }
+                } catch (error) {
+                    this.addLog(`Ошибка тестирования: ${error.message}`, 'error');
+                }
+            }
+        };
         
-        console.log('В VK:', isVK);
-        console.log('URL:', window.location.href);
-        console.log('User Agent:', navigator.userAgent);
+        // Запускаем приложение
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM готов');
+            App.addLog('DOM загружен');
+            
+            // Даем немного времени на загрузку VK Bridge
+            setTimeout(() => {
+                App.init();
+            }, 100);
+        });
+        
+        // Экспортируем в глобальную область
+        window.App = App;
     </script>
 </body>
 </html>
+
